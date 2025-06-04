@@ -1,0 +1,4 @@
+/* styles/hideOverlay.css */
+.nextjs-portal {
+  display: none !important;
+}
