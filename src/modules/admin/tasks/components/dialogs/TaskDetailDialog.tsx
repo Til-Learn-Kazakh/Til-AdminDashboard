@@ -50,7 +50,7 @@ export function TaskDetailDialog({ task, isOpen, toggleOpen }: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={toggleOpen}>
-      <DialogContent className="max-w-4xl bg-white dark:bg-gray-dark">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-white dark:bg-gray-dark">
         <DialogHeader>
           <DialogTitle>Task Details</DialogTitle>
         </DialogHeader>

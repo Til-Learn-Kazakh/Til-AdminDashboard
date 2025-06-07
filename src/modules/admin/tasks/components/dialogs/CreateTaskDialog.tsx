@@ -13,6 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/core/ui/dialog";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { TaskService } from "../../services/tasks.service";
 import { MultiImageUploader } from "../MultiImageUploader";
 
 // Варианты типов заданий
@@ -26,23 +29,20 @@ const taskTypes = [
   { label: "Read & Respond", value: "read_respond" },
 ];
 
-// Пример общей схемы (для упрощения здесь всё optional,
-// но в реальном проекте можно использовать Discriminated Union)
 const schema = z.object({
   unitId: z.string().min(1, { message: "Unit ID is required" }),
   type: z.string().min(1, { message: "Type is required" }),
   questionRu: z.string().min(1, { message: "Question (RU) is required" }),
   questionEn: z.string().min(1, { message: "Question (EN) is required" }),
-
-  // Для загрузки файлов используем FileList или null.
-  audioFiles: z.array(z.instanceof(File)).optional(),
+  order: z.coerce.number().min(0, { message: "Order must be >= 0" }),
+  audioFiles: z.instanceof(File).optional(),
   imageFiles: z.any().optional(),
-
   localizedCorrectAnswerRu: z.string().optional(),
   localizedCorrectAnswerEn: z.string().optional(),
+  localizedHintsRu: z.array(z.string()).optional(),
+  localizedHintsEn: z.array(z.string()).optional(),
 });
 
-// Тип формы
 type FormValues = z.infer<typeof schema>;
 
 type Props = {
@@ -50,9 +50,6 @@ type Props = {
   toggleOpen: () => void;
 };
 
-// Пример кастомного компонента для загрузки файла/файлов.
-// В реальном проекте можете сделать его более универсальным
-// или разделить на ImageUploader / AudioUploader.
 function FileUploader({
   control,
   name,
@@ -80,11 +77,8 @@ function FileUploader({
             accept={accept}
             multiple={multiple}
             onChange={(event) => {
-              // files — это FileList или null
-              const files = event.target.files;
-              // Вызываем onChange из RHF, чтобы сохранить значение в форму
-              // Можно передавать либо сам FileList, либо Array.from(files)
-              onChange(files);
+              const file = event.target.files?.[0] || null;
+              onChange(file);
             }}
           />
         )}
@@ -108,39 +102,81 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
       type: "",
       questionRu: "",
       questionEn: "",
-      imageFiles: [], // Важно! Пустой массив по умолчанию
+      order: 0,
+      imageFiles: [],
+      localizedHintsRu: [""],
+      localizedHintsEn: [""],
+    },
+  });
+
+  // внутри компонента
+  const mutation = useMutation({
+    mutationFn: (formData: FormData) => TaskService.createTask(formData),
+    onSuccess: (data) => {
+      toast.success("Task created successfully");
+      toggleOpen();
+      reset();
+    },
+    onError: (error: any) => {
+      console.error("Task creation failed:", error);
+      toast.error("Error creating task");
     },
   });
 
   const onSubmit = (data: FormValues) => {
-    // Здесь data.audioFiles / data.imageFiles — это FileList или null
-    // Например, вы можете сделать FormData и отправить файлы на сервер:
-    /*
-      const formData = new FormData();
-      if (data.audioFiles) {
-        formData.append('audio', data.audioFiles[0]);
-      }
-      // или если multiple:
-      if (data.imageFiles) {
-        Array.from(data.imageFiles).forEach((file, idx) => {
-          formData.append(`images[${idx}]`, file);
-        });
-      }
-      // и так далее
-    */
+    const formData = new FormData();
+    formData.append("unit_id", data.unitId);
+    formData.append("order", data.order.toString());
+    formData.append("type", data.type);
+    formData.append(
+      "question",
+      JSON.stringify({
+        ru: data.questionRu,
+        en: data.questionEn,
+      }),
+    );
+
+    if (data.localizedCorrectAnswerRu || data.localizedCorrectAnswerEn) {
+      formData.append(
+        "localized_correct_answer",
+        JSON.stringify({
+          ru: data.localizedCorrectAnswerRu ?? "",
+          en: data.localizedCorrectAnswerEn ?? "",
+        }),
+      );
+    }
+
+    if (data.audioFiles) {
+      formData.append("audio", data.audioFiles);
+    }
+    console.log("AUDIO FILES:", data.audioFiles);
 
     if (data.imageFiles && data.imageFiles.length > 0) {
-      // Можно сформировать FormData и загрузить на сервер
-      const formData = new FormData();
-      data.imageFiles.forEach((file: any, index: any) => {
-        formData.append(`imageFiles[${index}]`, file);
-      });
-      // отправляем formData на бэкенд...
-    }
-    console.log("Created task:", data);
+      formData.append("image", data.imageFiles[0]);
 
-    toggleOpen();
-    reset();
+      if (currentType === "choose_correct_image") {
+        Array.from(data.imageFiles as File[]).forEach((file: File) => {
+          formData.append("image_options_files", file);
+        });
+      }
+    }
+
+    if (
+      (data.localizedHintsRu && data.localizedHintsRu.length > 0) ||
+      (data.localizedHintsEn && data.localizedHintsEn.length > 0)
+    ) {
+      formData.append(
+        "localized_hints",
+        JSON.stringify({
+          ru: data.localizedHintsRu ?? [],
+          en: data.localizedHintsEn ?? [],
+        }),
+      );
+    }
+
+    console.log("SUBMIT DATA:", data);
+
+    mutation.mutate(formData);
   };
 
   // Следим за тем, какой тип выбран:
@@ -148,7 +184,7 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={toggleOpen}>
-      <DialogContent className="max-w-xl bg-white dark:bg-gray-dark">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-white dark:bg-gray-dark">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
@@ -184,6 +220,31 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
           {errors.type && (
             <p className="-mt-3 text-sm text-red-500">{errors.type.message}</p>
           )}
+          <Controller
+            control={control}
+            name="order"
+            render={({ field }) => (
+              <div className="flex flex-col gap-1">
+                <label className="font-medium">Order</label>
+                <input
+                  type="number"
+                  value={field.value ?? 0}
+                  onChange={(e) => {
+                    const numericValue = parseInt(
+                      e.target.value.replace(/^0+/, "") || "0",
+                    );
+                    field.onChange(numericValue);
+                  }}
+                  className="rounded-md border px-3 py-2"
+                  placeholder="Enter order"
+                  min={0}
+                />
+                {errors.order && (
+                  <p className="text-sm text-red-500">{errors.order.message}</p>
+                )}
+              </div>
+            )}
+          />
 
           {/* Общие поля для всех типов */}
           <InputGroup
@@ -222,6 +283,73 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
                 control={control}
                 error={errors.localizedCorrectAnswerEn?.message}
               />
+
+              <Controller
+                control={control}
+                name="localizedHintsRu"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (RU)</label>
+                    {(field.value ?? []).map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint RU
+                    </Button>
+                  </div>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="localizedHintsEn"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (EN)</label>
+                    {field.value?.map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint EN
+                    </Button>
+                  </div>
+                )}
+              />
+
               {/* Загрузка одного изображения */}
               <FileUploader
                 control={control}
@@ -262,6 +390,7 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
                 control={control}
                 error={errors.localizedCorrectAnswerRu?.message}
               />
+
               <InputGroup
                 label="Localized Correct Answer (EN)"
                 placeholder="Правильный ответ (EN)"
@@ -269,6 +398,72 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
                 type="text"
                 control={control}
                 error={errors.localizedCorrectAnswerEn?.message}
+              />
+
+              <Controller
+                control={control}
+                name="localizedHintsRu"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (RU)</label>
+                    {field.value?.map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint RU
+                    </Button>
+                  </div>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="localizedHintsEn"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (EN)</label>
+                    {field.value?.map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint EN
+                    </Button>
+                  </div>
+                )}
               />
             </>
           )}
@@ -305,6 +500,72 @@ export function CreateTaskDialog({ isOpen, toggleOpen }: Props) {
                 type="text"
                 control={control}
                 error={errors.localizedCorrectAnswerEn?.message}
+              />
+
+              <Controller
+                control={control}
+                name="localizedHintsRu"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (RU)</label>
+                    {field.value?.map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint RU
+                    </Button>
+                  </div>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="localizedHintsEn"
+                render={({ field }) => (
+                  <div>
+                    <label className="font-medium">Localized Hints (EN)</label>
+                    {field.value?.map((val, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        value={val}
+                        onChange={(e) => {
+                          const newHints = [...(field.value ?? [])];
+                          newHints[index] = e.target.value;
+                          field.onChange(newHints);
+                        }}
+                        className="mb-2 w-full rounded-md border px-3 py-2"
+                        placeholder={`Hint #${index + 1}`}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        field.onChange([...(field.value ?? []), ""])
+                      }
+                      className="mb-4 text-white"
+                    >
+                      + Add Hint EN
+                    </Button>
+                  </div>
+                )}
               />
             </>
           )}

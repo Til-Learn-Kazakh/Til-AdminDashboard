@@ -9,8 +9,11 @@ import {
   DialogTitle,
 } from "@/core/ui/dialog";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
+import { LevelService } from "../../services/section.service";
 
 type DialogProps = {
   isOpen: boolean;
@@ -18,7 +21,7 @@ type DialogProps = {
 };
 
 type Section = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -49,10 +52,22 @@ export function UpdateSectionDialog({
     control,
     formState: { errors },
   } = form;
+  const queryClient = useQueryClient();
+
+  const { mutate } = useMutation({
+    mutationFn: (data: FormType) => LevelService.updateLevel(section.id, data),
+    onSuccess: () => {
+      toast.success("Section updated successfully");
+      queryClient.refetchQueries({ queryKey: ["levels"] });
+      toggleOpen();
+    },
+    onError: () => {
+      toast.error("Failed to update section");
+    },
+  });
 
   const onSubmit = (values: FormType) => {
-    console.log("Updated Section:", values);
-    toggleOpen();
+    mutate(values);
   };
 
   return (

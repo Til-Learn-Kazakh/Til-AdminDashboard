@@ -4,6 +4,9 @@ import { environment } from "@/core/config/environment.config";
 type CreateLevelDto = {
   name: string;
 };
+type UpdateLevelDto = {
+  name: string;
+};
 
 type Level = {
   id: number;
@@ -20,6 +23,14 @@ class LevelServiceClass {
 
   async createLevel(dto: CreateLevelDto): Promise<Level> {
     const { data } = await axiosWithAuth.post<any>(this.baseUrl, dto);
+    return data;
+  }
+
+  async updateLevel(id: string, dto: UpdateLevelDto): Promise<Level> {
+    const { data } = await axiosWithAuth.put<Level>(
+      `${this.baseUrl}/${id}`,
+      dto,
+    );
     return data;
   }
 }

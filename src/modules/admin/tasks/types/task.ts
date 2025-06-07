@@ -3,6 +3,7 @@ export type Task = {
   unit_id: string;
   type: string;
   created_at: string;
+  order: number; 
   question?: Record<string, string>;
   localized_correct_answer?: Record<string, string>;
   localized_hints?: Record<string, string[]>;
