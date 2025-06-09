@@ -37,7 +37,7 @@ export function Header() {
         <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
           {currentTitle}
         </h1>
-        <p className="font-medium">Manage your Qazaq Til learning platform</p>
+        <p className="font-medium">Manage your Til learning platform</p>
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-2 min-[375px]:gap-4">

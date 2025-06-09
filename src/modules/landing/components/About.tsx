@@ -23,7 +23,7 @@ export const About = () => {
               <span className="text-primary">About </span>Company
             </h2>
             <p className="text-muted-foreground mt-6 max-w-2xl text-base leading-relaxed sm:text-lg">
-              Qazaq Til — это современная платформа для изучения казахского
+              Til — это современная платформа для изучения казахского
               языка. Мы используем игровые механики, адаптивный контент и мощную
               админ-панель, чтобы обучение было не только полезным, но и
               увлекательным.

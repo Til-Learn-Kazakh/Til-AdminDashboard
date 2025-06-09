@@ -37,7 +37,7 @@ export default function LoginPage() {
                 className="mb-10 inline-block text-3xl font-bold tracking-tight text-dark dark:text-white"
               >
                 <span className="bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent">
-                  Qazaq Til
+                  Til
                 </span>
               </Link>
 

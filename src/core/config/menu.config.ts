@@ -41,14 +41,14 @@ export const ADMIN_MENU: IMenuItem[] = [
   },
 
   {
-    icon: Settings,
-    link: () => ADMIN_PAGES.SETTINGS,
-    name: "Settings",
-  },
-  {
     icon: UsersIcon,
     link: () => ADMIN_PAGES.USERS,
     name: "Users",
+  },
+  {
+    icon: Settings,
+    link: () => ADMIN_PAGES.SETTINGS,
+    name: "Settings",
   },
 ];
 

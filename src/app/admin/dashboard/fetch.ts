@@ -10,19 +10,22 @@ export async function getOverviewData() {
       value: 4220,
     },
     members: {
-      value: 4220,
+      value: 3,
     },
     sections: {
-      value: 4220,
+      value: 1,
     },
     units: {
-      value: 4220,
+      value: 6,
     },
-    products: {
-      value: 3456,
+    active_users: {
+      value: 8,
+    },
+    new_users: {
+      value: 4,
     },
     users: {
-      value: 3456,
+      value: 16,
     },
   };
 }

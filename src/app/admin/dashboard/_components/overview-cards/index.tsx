@@ -4,7 +4,8 @@ import { OverviewCard } from "./card";
 import * as icons from "./icons";
 
 export async function OverviewCardsGroup() {
-  const { users, members, sections, units } = await getOverviewData();
+  const { users, members, sections, units, active_users, new_users } =
+    await getOverviewData();
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -48,7 +49,7 @@ export async function OverviewCardsGroup() {
         label="Active users this month"
         data={{
           ...units,
-          value: compactFormat(units.value),
+          value: compactFormat(active_users.value),
         }}
         Icon={icons.ActiveUsers}
       />
@@ -56,7 +57,7 @@ export async function OverviewCardsGroup() {
         label="New registrations this month"
         data={{
           ...units,
-          value: compactFormat(units.value),
+          value: compactFormat(new_users.value),
         }}
         Icon={icons.NewRegistrations}
       />

@@ -14,8 +14,7 @@ type User = {
   firstname: string;
   email: string;
   xp: number;
-  crystal: number;
-  role: "user" | "admin";
+  crystals: number;
   createdAt: string;
 };
 
@@ -58,13 +57,8 @@ export const UserDetailDialog = memo(
 
               <div>
                 <p className="text-muted-foreground">Crystal</p>
-                <p className="mt-1 font-medium">{user.crystal}</p>
+                <p className="mt-1 font-medium">{user.crystals}</p>
               </div>
-            </div>
-
-            <div>
-              <p className="text-muted-foreground">Role</p>
-              <p className="mt-1 font-medium capitalize">{user.role}</p>
             </div>
 
             <div>

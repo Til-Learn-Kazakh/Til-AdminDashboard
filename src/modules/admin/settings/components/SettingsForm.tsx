@@ -5,8 +5,14 @@ import InputGroup from "@/components/FormElements/InputGroup";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+
+import { toast } from "sonner";
 import { z } from "zod";
+import { useProfile } from "../../../../core/hooks/useProfile";
+import { SettingsService } from "../services/settings.service";
 
 const schema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
@@ -20,24 +26,48 @@ const schema = z.object({
 type FormType = z.infer<typeof schema>;
 
 export function SettingsForm() {
+  const { data: currentUser, isPending } = useProfile();
+  const queryClient = useQueryClient();
+
   const form = useForm<FormType>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      firstName: "Bolatbek",
-      lastName: "Ermekov",
-      email: "ermekbolatbek21@gmail.com",
-    },
   });
 
   const {
     handleSubmit,
     control,
     formState: { errors },
+    reset,
   } = form;
 
-  const onSubmit = (data: FormType) => {
-    console.log("Saved data", data);
-    // TODO: API submission
+  useEffect(() => {
+    if (currentUser) {
+      reset({
+        firstName: currentUser.first_name,
+        lastName: currentUser.last_name,
+        email: currentUser.email,
+      });
+    }
+  }, [currentUser, reset]);
+
+  const { mutate } = useMutation({
+    mutationFn: (data: FormType) =>
+      SettingsService.updateUserProfile({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+      }),
+    onSuccess: () => {
+      toast.success("Profile updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+    onError: () => {
+      toast.error("Failed to update profile");
+    },
+  });
+
+  const onSubmit = (values: FormType) => {
+    mutate(values);
   };
 
   return (

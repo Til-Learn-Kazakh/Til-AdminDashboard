@@ -13,18 +13,18 @@ import {
   ADMIN_PAGES,
   PRIMARY_PAGES,
 } from "../../../../core/config/pages-url.config";
+import { useProfile } from "../../../../core/hooks/useProfile";
 import { LogOutIcon, SettingsIcon } from "./icons";
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: currentUser, isPending } = useProfile();
 
-  const USER = {
-    firstName: "Bolatbek",
-    lastName: "Ermekov",
-    email: "ermekbolatbek21@gmail.com",
-    img: "",
-  };
-  const initials = USER.firstName?.charAt(0).toUpperCase() || "U";
+  if (isPending || !currentUser) {
+    return null;
+  }
+
+  const initials = currentUser.first_name?.charAt(0).toUpperCase() || "U";
 
   return (
     <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -32,20 +32,12 @@ export function UserInfo() {
         <span className="sr-only">My Account</span>
 
         <figure className="flex items-center gap-3">
-          {USER.img ? (
-            <img
-              src={USER.img}
-              className="size-12 rounded-full object-cover"
-              alt={`Avatar of ${USER.firstName}`}
-            />
-          ) : (
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
-              {initials}
-            </div>
-          )}
+          <div className="flex size-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
+            {initials}
+          </div>
 
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{USER.firstName + " " + USER.lastName}</span>
+            <span>{currentUser.first_name + " " + currentUser.last_name}</span>
 
             <ChevronUpIcon
               aria-hidden
@@ -66,25 +58,17 @@ export function UserInfo() {
         <h2 className="sr-only">User information</h2>
 
         <figure className="flex items-center gap-2.5 px-5 py-3.5">
-          {USER.img ? (
-            <img
-              src={USER.img}
-              className="size-12 rounded-full object-cover"
-              alt={`Avatar for ${USER.firstName}`}
-            />
-          ) : (
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
-              {initials}
-            </div>
-          )}
+          <div className="flex size-12 items-center justify-center rounded-full bg-primary text-lg font-semibold text-white">
+            {initials}
+          </div>
 
           <figcaption className="space-y-1 text-base font-medium">
             <div className="mb-2 leading-none text-dark dark:text-white">
-              {USER.firstName + " " + USER.lastName}
+              {currentUser.first_name + " " + currentUser.last_name}
             </div>
 
             <div className="max-w-[200px] truncate leading-none text-gray-6">
-              {USER.email}
+              {currentUser.email}
             </div>
           </figcaption>
         </figure>

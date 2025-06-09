@@ -38,7 +38,7 @@ export function Navbar() {
         {/* Логотип */}
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold text-dark dark:text-white">
-            Qazaq Til
+            Til
           </span>
         </div>
 
