@@ -1,4 +1,4 @@
 export const environment = {
-  apiUrl: process.env["NEXT_PUBLIC_API_URL"],
-  serverUrl: "http://localhost:4000",
+  apiUrl: "https://qazaqtil.ip-ddns.com/api/v1",
+  serverUrl: "https://qazaqtil.ip-ddns.com",
 };
