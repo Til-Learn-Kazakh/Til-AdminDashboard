@@ -127,7 +127,10 @@ export function SectionTable() {
                       {updateModalOpen &&
                         selectedSection?.id === section.id && (
                           <UpdateSectionDialog
-                            section={selectedSection}
+                            section={{
+                              ...selectedSection,
+                              id: String(selectedSection.id),
+                            }}
                             isOpen={updateModalOpen}
                             toggleOpen={toggleUpdateModal}
                           />

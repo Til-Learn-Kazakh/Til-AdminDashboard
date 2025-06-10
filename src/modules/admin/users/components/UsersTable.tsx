@@ -98,7 +98,11 @@ export function UsersTable() {
 
       {detailOpen && selectedUser && (
         <UserDetailDialog
-          user={selectedUser}
+          user={{
+            ...selectedUser,
+            firstname: selectedUser.first_name,
+            createdAt: selectedUser.created_at || "",
+          }}
           isOpen={detailOpen}
           toggleOpen={toggleDetail}
         />
