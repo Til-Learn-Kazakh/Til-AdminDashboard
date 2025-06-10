@@ -15,7 +15,7 @@ type Props = {
 };
 
 const LANGS = ["ru", "en", "kk"];
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "https://qazaqtil.ip-ddns.com";
 
 export function TaskDetailDialog({ task, isOpen, toggleOpen }: Props) {
   const renderLangFields = (field?: Record<string, string>) =>
